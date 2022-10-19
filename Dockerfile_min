@@ -1,0 +1,14 @@
+FROM docker.io/ubuntu:20.04
+
+ARG ARCHI_VERSION=4.9.3
+ARG COARCHI_VERSION=0.8.4
+ARG TZ=UTC
+
+WORKDIR /archi
+COPY app .
+
+SHELL ["/bin/bash", "-o", "pipefail", "-x", "-e", "-u", "-c"]
+RUN ln -snf "/usr/share/zoneinfo/$TZ" /etc/localtime && \
+    echo "$TZ" > /etc/timezone && \
+    tar zxf Archi-Linux64-$ARCHI_VERSION.tgz -C /opt/ 2> /dev/null && \
+    chmod +x /opt/Archi/Archi

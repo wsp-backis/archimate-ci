@@ -80,7 +80,10 @@ archi_run() {
   xvfb-run \
     /opt/Archi/Archi -application "$ARCHI_APP" -consoleLog -nosplash \
       --modelrepository.loadModel "$ARCHI_PROJECT_PATH" "${_args[@]}" &&
-  printf '\n%s\n\n' "Done. Reports saved to $ARCHI_REPORT_PATH"
+  printf '\n%s\n\n' "Nearly done. Reports saved to $ARCHI_REPORT_PATH"
+
+  # Move files to $web
+  python3 /opt/Archi/src/main.py
 }
 
 # Check first argument match regex present in second argument
@@ -124,7 +127,39 @@ update_html() {
 }
 
 # Git clone wrap
-git_clone() { git clone "${1:?Repo url not set}" "$ARCHI_PROJECT_PATH"; }
+git_clone() { 
+  # git clone "${1:?Repo url not set}" "$ARCHI_PROJECT_PATH"; 
+  cd "$ARCHI_PROJECT_PATH"
+  # Start by cloning the main branch (to get the other branches)
+  if [ -d "main" ]; then
+          cd main
+          git pull 
+          # echo "git pull main"
+          cd - > /dev/null
+  else
+          git clone "${1:?Repo url not set}" main
+          # echo "git clone main"
+  fi
+
+  cd main
+  # echo "1 $(pwd)"
+  # For each branch download branch or pull updates
+  for branch in $(git branch --all | grep '^\s*remotes' | egrep --invert-match '(:?HEAD|master|main)$'); do
+      cd ..
+      # echo "2 $(pwd)"
+      if [ -d "${branch##*/}" ]; then
+          cd "${branch##*/}"
+          git pull
+          # echo "git pull ${branch##*/}"
+          cd ..
+          # echo "3 $(pwd)"
+      else
+          git clone -b  "${branch##*/}" https://github.com/WSP-Secure-Nordics/Nordic-EA.git "${branch##*/}"
+          # echo "git clone ${branch##*/}"
+      fi
+      cd - > /dev/null
+  done
+  }
 
 # GitLab log separator
 section_start () {
